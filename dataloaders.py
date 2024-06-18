@@ -19,10 +19,10 @@ class ComplexDataset(Dataset):
         return image, []
 
 
-def get_complex_mnist_dataloaders(batch_size=32):
-    """MNIST dataloader with (64, 64) sized images."""
+def get_complex_mnist_dataloaders(batch_size=64, image_size=256):
+    """MNIST dataloader with (256, 256) sized images."""
     all_transforms = transforms.Compose([
-        transforms.Resize(64),
+        transforms.Resize(image_size),
         transforms.ToTensor()
     ])
     # Get train and test data

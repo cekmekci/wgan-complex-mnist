@@ -14,8 +14,8 @@ random.seed(SEED)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-data_loader, _ = get_complex_mnist_dataloaders(batch_size=64)
-img_size = (2, 64, 64)
+img_size = (2, 256, 256)
+data_loader, _ = get_complex_mnist_dataloaders(batch_size=16, image_size=img_size[1])
 
 generator = Generator(img_size=img_size, latent_dim=100, dim=128)
 discriminator = Discriminator(img_size=img_size, dim=256)
