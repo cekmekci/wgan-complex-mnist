@@ -2,7 +2,7 @@ import numpy as np
 # import cupy
 import tike
 import tike.ptycho
-
+import torch
 
 def ptycho_forward_op(input, scan, probe):
     # input is a tensor with shape (1,2,H1,W1)
@@ -64,8 +64,8 @@ def ptycho_adjoint_op(input, scan, probe, object_size):
 
 def cartesian_scan_pattern(object_size, probe_shape, step_size = 25, sigma = 1):
     scan = []
-    for y in range(0, object_size[0] - probe_shape[3] + 1, step_size):
-        for x in range(0, object_size[1] - probe_shape[4] + 1, step_size):
+    for y in range(0, object_size[0] - probe_shape[2] + 1, step_size):
+        for x in range(0, object_size[1] - probe_shape[3] + 1, step_size):
             y_perturbation = sigma * np.random.randn()
             x_perturbation = sigma * np.random.randn()
             y_new = 1 + y + y_perturbation
@@ -74,9 +74,9 @@ def cartesian_scan_pattern(object_size, probe_shape, step_size = 25, sigma = 1):
                 x_new = 1 + x + np.abs(x_perturbation)
             if y_new <= 1:
                 y_new = 1 + y + np.abs(y_perturbation)
-            if x_new >= object_size[1] - probe_shape[4] + 1:
+            if x_new >= object_size[1] - probe_shape[3] + 1:
                 x_new = 1 + x - x_perturbation
-            if y_new >= object_size[0] - probe_shape[3] + 1:
+            if y_new >= object_size[0] - probe_shape[2] + 1:
                 y_new = 1 + y - y_perturbation
             scan.append((y_new, x_new))
     scan = np.array(scan, dtype=np.float32)

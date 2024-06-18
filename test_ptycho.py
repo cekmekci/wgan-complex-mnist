@@ -9,6 +9,7 @@ from sampler import MALA_Sampler
 import random
 from utils_ptycho import ptycho_forward_op, ptycho_adjoint_op, cartesian_scan_pattern
 import bz2
+from scipy.ndimage import zoom
 
 
 # Fix the random seed
@@ -35,12 +36,12 @@ with bz2.open('./probes/siemens-star-small.npz.bz2') as f:
     # adjust the shape so that it is (1,2,H2,W2)
     probe = np.expand_dims(probe, 0)
     probe = np.stack((np.real(probe), np.imag(probe)), 1)
+    probe = torch.from_numpy(probe).float()
 
 # Obtain the scan
 print('Creating the scan pattern...')
 object_size = (64, 64)
 scan = cartesian_scan_pattern(object_size, probe.shape, step_size = 4, sigma = 0.25)
-hparams.patch_size = object_size[0]
 
 # Obtain a test image
 _, test_dataloader = get_complex_mnist_dataloaders(batch_size=64)
