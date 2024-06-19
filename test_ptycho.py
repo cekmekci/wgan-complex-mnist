@@ -54,7 +54,7 @@ AH = lambda x: ptycho_adjoint_op(x, scan, probe, object_size)
 # Obtain the diffraction patterns
 print('Obtaining the difraction patterns...')
 farplane = A(gt) # (1,S,2,H2,W2)
-intensity = np.square(np.abs(farplane))
+intensity = np.sum(farplane, 2, keepdims=True) # (1,S,1,H2,W2)
 intensity = np.random.poisson(intensity)
 
 # Obtain the generator

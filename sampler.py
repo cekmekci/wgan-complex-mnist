@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-class MALA_Sampler():
+class MALA_Poisson_Sampler():
 
     def __init__(self, A, AT, noise_std, generator, measurement, z_init,
                     num_iter=10000, step_size=1e-5, burn_in=500, use_cuda=False):
@@ -22,12 +22,19 @@ class MALA_Sampler():
 
     def log_p_z_given_y(self, z):
         # ignoring logp(y)
-        return -0.5 / (self.noise_std**2) * torch.sum((self.A(self.generator(z)) - self.measurement)**2) - 0.5 * torch.sum(z**2)
+        AGz = self.A(self.generator(z))
+        log_likelihood = torch.sum(self.measurement *  torch.log(torch.sum(AGz**2,2,keepdim=True)) - torch.sum(AGz**2,2,keepdim=True))
+        log_prior = -1 / 2 * torch.sum(z**2)
+        return log_likelihood + log_prior
 
     def grad_log_p_z_given_y(self, z):
-        vec = self.AT(self.A(self.generator(z)) - self.measurement)
+        # there is a dimension related mistake here. I need to figure it out.
+        AGz = self.A(self.generator(z))
+        vec = self.AT(AGz * (self.measurement / torch.sum(AGz**2,2,keepdim=True) - 1))
+        vec[:,1,:,:] = -1 * vec[:,1,:,:] # conjugate
         _, vjp = torch.autograd.functional.vjp(self.generator, z, v=vec, create_graph=False, strict=True)
-        grad = -1 / (self.noise_std**2) * vjp - z
+        vjp[:,1,:,:] = -1 * vjp[:,1,:,:] # conjugate
+        grad = 2 * vjp[:,:1,:,:] # pick the real part without losing the dimension
         return grad
 
     def log_q_zbar_given_ztilde(self, z_bar, z_tilde):
