@@ -14,6 +14,7 @@ class MALA_Poisson_Sampler():
         self.step_size = step_size
         self.burn_in = burn_in
         self.use_cuda = use_cuda
+        self.eps = 1e-5
         if self.use_cuda:
             self.generator = self.generator.cuda()
             self.z_init = self.z_init.cuda()
@@ -22,14 +23,14 @@ class MALA_Poisson_Sampler():
     def log_p_z_given_y(self, z):
         # ignoring logp(y)
         AGz = self.A(self.generator(z))
-        log_likelihood = torch.sum(self.measurement *  torch.log(torch.sum(AGz**2,2,keepdim=True)) - torch.sum(AGz**2,2,keepdim=True))
+        log_likelihood = torch.sum(self.measurement * torch.log(torch.sum(AGz**2,2,keepdim=True) + self.eps) - torch.sum(AGz**2,2,keepdim=True))
         log_prior = -1 / 2 * torch.sum(z**2)
         return log_likelihood + log_prior
 
     def grad_log_p_z_given_y(self, z):
         # there is a dimension related mistake here. I need to figure it out.
         AGz = self.A(self.generator(z)) # (1,S,2,H2,W2)
-        vec = self.AT(AGz * (self.measurement / torch.sum(AGz**2,2,keepdim=True) - 1)) # (1,2,64,64)
+        vec = self.AT(AGz * (self.measurement / (torch.sum(AGz**2,2,keepdim=True) + self.eps)  - 1)) # (1,2,64,64)
         _, vjp = torch.autograd.functional.vjp(self.generator, z, v=vec, create_graph=False, strict=True) # (1, latent_dim)
         grad = 2 * vjp
         return grad

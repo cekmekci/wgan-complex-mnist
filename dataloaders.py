@@ -34,3 +34,20 @@ def get_complex_mnist_dataloaders(batch_size=64, image_size=256):
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
     return train_loader, test_loader
+
+
+def get_complex_celeba_dataloaders(batch_size=64, image_size=256):
+    """CelebA dataloader with (256, 256) sized images."""
+    all_transforms = transforms.Compose([
+        transforms.Resize(image_size),
+        transforms.ToTensor()
+    ])
+    # Get train and test data
+    train_data = torchvision.datasets.CelebA('../data', split='train', transform=all_transforms, download=True)
+    test_data = torchvision.datasets.CelebA('../data', split='test', transform=all_transforms, download=True)
+    train_data = ComplexDataset(train_data)
+    test_data = ComplexDataset(test_data)
+    # Create dataloaders
+    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+    return train_loader, test_loader
