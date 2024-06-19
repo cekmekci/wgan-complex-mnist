@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
 import imageio
-from sampler import MALA_Sampler
+from sampler import MALA_Poisson_Sampler
 import random
 from utils_ptycho import ptycho_forward_op, ptycho_adjoint_op, cartesian_scan_pattern
 import bz2
@@ -23,8 +23,8 @@ torch.backends.cudnn.benchmark = False
 
 # Obtain the probe
 print('Loading the probe...')
-probe_amplitude = 200
-probe_shape = (8, 8)
+probe_amplitude = 2000
+probe_shape = (16, 16)
 with bz2.open('./probes/siemens-star-small.npz.bz2') as f:
     archive = np.load(f)
     probe = archive['probe'][0]
@@ -54,8 +54,9 @@ AH = lambda x: ptycho_adjoint_op(x, scan, probe, object_size)
 # Obtain the diffraction patterns
 print('Obtaining the difraction patterns...')
 farplane = A(gt) # (1,S,2,H2,W2)
-intensity = np.sum(farplane, 2, keepdims=True) # (1,S,1,H2,W2)
-intensity = np.random.poisson(intensity)
+intensity = torch.sum(farplane**2, 2, keepdim=True) # (1,S,1,H2,W2)
+intensity = torch.poisson(intensity)
+print("Min intensity:", intensity.min(), "Maximum intensity:", intensity.max())
 
 # Obtain the generator
 latent_dim = 100
@@ -71,7 +72,7 @@ generator.eval()
 z_init = torch.randn(1, latent_dim)
 
 # Create the MALA sampler
-mala_sampler = MALA_Sampler(A, AH, generator, measurement, z_init,
+mala_sampler = MALA_Poisson_Sampler(A, AH, generator, intensity, z_init,
                 num_iter=1000, step_size=1e-5, burn_in=100, use_cuda=torch.cuda.is_available())
 
 # Generate samples
