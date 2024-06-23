@@ -23,7 +23,7 @@ torch.backends.cudnn.benchmark = False
 
 # Obtain the probe
 print('Loading the probe...')
-probe_amplitude = 100
+probe_amplitude = 1000
 probe_shape = (8, 8)
 with bz2.open('./probes/siemens-star-small.npz.bz2') as f:
     archive = np.load(f)
@@ -41,7 +41,7 @@ with bz2.open('./probes/siemens-star-small.npz.bz2') as f:
 # Obtain the scan
 print('Creating the scan pattern...')
 object_size = (64, 64)
-scan = cartesian_scan_pattern(object_size, probe.shape, step_size = 4, sigma = 0.25)
+scan = cartesian_scan_pattern(object_size, probe.shape, step_size = 2, sigma = 0.1)
 
 # Obtain a test image
 _, test_dataloader = get_complex_mnist_dataloaders(batch_size=64)
