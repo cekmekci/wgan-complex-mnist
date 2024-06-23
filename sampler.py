@@ -28,7 +28,6 @@ class MALA_Poisson_Sampler():
         return log_likelihood + log_prior
 
     def grad_log_p_z_given_y(self, z):
-        # there is a dimension related mistake here. I need to figure it out.
         AGz = self.A(self.generator(z)) # (1,S,2,H2,W2)
         vec = self.AT(AGz * (self.measurement / (torch.sum(AGz**2,2,keepdim=True) + self.eps)  - 1)) # (1,2,64,64)
         _, vjp = torch.autograd.functional.vjp(self.generator, z, v=vec, create_graph=False, strict=True) # (1, latent_dim)
