@@ -5,9 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
 import imageio
-from sampler import MALA_Poisson_Sampler
+from sampler import MALA_Poisson_Sampler, optimize_latent_variable
 import random
-from utils_ptycho import ptycho_forward_op, ptycho_adjoint_op, cartesian_scan_pattern
+from utils_ptycho import ptycho_forward_op, ptycho_adjoint_op, cartesian_scan_pattern, rPIE
 import bz2
 from scipy.ndimage import zoom
 
@@ -23,8 +23,8 @@ torch.backends.cudnn.benchmark = False
 
 # Obtain the probe
 print('Loading the probe...')
-probe_amplitude = 2000
-probe_shape = (16, 16)
+probe_amplitude = 100
+probe_shape = (8, 8)
 with bz2.open('./probes/siemens-star-small.npz.bz2') as f:
     archive = np.load(f)
     probe = archive['probe'][0]

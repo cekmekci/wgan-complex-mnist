@@ -64,8 +64,8 @@ def ptycho_adjoint_op(input, scan, probe, object_size):
 
 def cartesian_scan_pattern(object_size, probe_shape, step_size = 25, sigma = 1):
     scan = []
-    for y in range(0, object_size[0] - probe_shape[2] + 1, step_size):
-        for x in range(0, object_size[1] - probe_shape[3] + 1, step_size):
+    for y in range(0, object_size[0] - probe_shape[2], step_size):
+        for x in range(0, object_size[1] - probe_shape[3], step_size):
             y_perturbation = sigma * np.random.randn()
             x_perturbation = sigma * np.random.randn()
             y_new = 1 + y + y_perturbation
@@ -98,17 +98,14 @@ def rPIE(measurement, object_size, scan, probe):
     # scan is a np array with shape (S,2)
     # probe is a tensor with shape (1,2,H2,W2)
     # measurement is a tensor with (1,S,2,H2,W2)
-    device = input.device
-    # convert input into a complex array (H1,W1)
-    input = np.squeeze(input.detach().cpu().numpy(), 0)
-    input = input[0,:,:] + 1j * input[1,:,:]
+    device = measurement.device
     # convert probe into a complex array (1,1,1,H2,W2)
     probe = np.squeeze(probe.detach().cpu().numpy(), 0)
     probe = probe[0,:,:] + 1j * probe[1,:,:]
     probe = np.expand_dims(probe, (0,1,2)) # expand probe dims to make it compatible with tike (1,1,1,H2,W2)
     # convert measurement into a complex array (S,H2,W2)
     measurement = np.squeeze(measurement.detach().cpu().numpy(), 0)
-    measurement = measurement[:,0,:,:] + 1j * input[:,1,:,:]
+    measurement = measurement[:,0,:,:]
     # initial estimate of the object
     psi = 0.5 * np.ones(object_size) + 1j * 0.0
     # RPIE
