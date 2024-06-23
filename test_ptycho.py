@@ -68,8 +68,10 @@ else:
     generator.load_state_dict(torch.load("./pretrained/gen_mnist_model.pt", map_location=torch.device('cpu')))
 generator.eval()
 
-# Initialize z randomly. See Unser's paper for a better initialization technique.
-z_init = torch.randn(1, latent_dim)
+# Initialize the latent variable
+rpie_rec = rPIE(intensity, object_size, scan, probe)
+z_init = optimize_latent_variable(generator, rpie_rec, z_dim=latent_dim, lr=1e-4, num_steps=1000, verbose=False)
+
 
 # Create the MALA sampler
 mala_sampler = MALA_Poisson_Sampler(A, AH, generator, intensity, z_init,

@@ -1,5 +1,8 @@
 import torch
 import numpy as np
+import torch.nn as nn
+import torch.optim as optim
+
 
 class MALA_Poisson_Sampler():
 
@@ -72,3 +75,41 @@ class MALA_Poisson_Sampler():
             x_sample = self.generator(z_sample).detach().cpu().numpy()[0,:,:,:]
             x_samples.append(x_sample)
         return x_samples
+
+
+def optimize_latent_variable(G, x, z_dim, lr=1e-4, num_steps=1000, verbose=False):
+    """
+    Finds the latent variable z that best approximates the given image x.
+
+    Args:
+        G (nn.Module): Generative model.
+        x (torch.Tensor): Target image tensor.
+        z_dim (int): Dimension of the latent space.
+        lr (float): Learning rate for the optimizer.
+        num_steps (int): Number of optimization steps.
+
+    Returns:
+        torch.Tensor: Optimized latent variable.
+    """
+    # Ensure x is on the same device as G
+    device = next(G.parameters()).device
+    x = x.to(device)
+    # Initialize the latent variable z with requires_grad=True
+    z = torch.randn(1, z_dim, device=device, requires_grad=True)
+    # Define the optimizer
+    optimizer = optim.Adam([z], lr=lr)
+    # Define the loss function
+    loss_fn = nn.MSELoss()
+    for step in range(num_steps):
+        optimizer.zero_grad()
+        # Generate image from z
+        generated_image = G(z)
+        # Compute the loss
+        loss = loss_fn(generated_image, x)
+        # Backpropagate the loss
+        loss.backward()
+        # Update z
+        optimizer.step()
+        if verbose and (step % 100 == 0):
+            print(f'Step {step}/{num_steps}, Loss: {loss.item()}')
+    return z.detach()
