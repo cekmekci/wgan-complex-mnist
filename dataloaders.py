@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 import torch
+import math
 
 class ComplexDataset(Dataset):
     def __init__(self, real_dataset):
@@ -13,9 +14,15 @@ class ComplexDataset(Dataset):
         return len(self.real_dataset) // 2  # Number of pairs
 
     def __getitem__(self, idx):
-        image1 = self.real_dataset[2 * idx][0]
-        image2 = self.real_dataset[2 * idx + 1][0]
-        image = torch.cat((image1, image2), dim=0)  # Concatenate along channel dimension
+        # obtain the magnitude and phase parts
+        magnitude = self.real_dataset[2 * idx][0]
+        phase = self.real_dataset[2 * idx + 1][0]
+        # construct the complex tensor
+        complex = torch.polar(magnitude, phase * 2 * math.pi)
+        # real and imaginary parts
+        real = torch.real(complex)
+        imag = torch.imag(complex)
+        image = torch.cat((real, imag), dim=0)  # Concatenate along channel dimension
         return image, []
 
 
@@ -40,11 +47,12 @@ def get_complex_celeba_dataloaders(batch_size=64, image_size=256):
     """CelebA dataloader with (256, 256) sized images."""
     all_transforms = transforms.Compose([
         transforms.Resize(image_size),
+        transforms.Grayscale()
         transforms.ToTensor()
     ])
     # Get train and test data
-    train_data = torchvision.datasets.CelebA('../data', split='train', transform=all_transforms, download=True)
-    test_data = torchvision.datasets.CelebA('../data', split='test', transform=all_transforms, download=True)
+    train_data = datasets.CelebA('../data', split='train', transform=all_transforms, download=True)
+    test_data = datasets.CelebA('../data', split='test', transform=all_transforms, download=True)
     train_data = ComplexDataset(train_data)
     test_data = ComplexDataset(test_data)
     # Create dataloaders
