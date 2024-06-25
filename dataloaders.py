@@ -18,7 +18,7 @@ class ComplexDataset(Dataset):
         magnitude = self.real_dataset[2 * idx][0]
         phase = self.real_dataset[2 * idx + 1][0]
         # construct the complex tensor
-        complex = torch.polar(magnitude, phase * 2 * math.pi)
+        complex = torch.polar(magnitude, phase)
         # real and imaginary parts
         real = torch.real(complex)
         imag = torch.imag(complex)
@@ -47,7 +47,7 @@ def get_complex_celeba_dataloaders(batch_size=64, image_size=256):
     """CelebA dataloader with (256, 256) sized images."""
     all_transforms = transforms.Compose([
         transforms.Resize(image_size),
-        transforms.Grayscale()
+        transforms.Grayscale(),
         transforms.ToTensor()
     ])
     # Get train and test data
