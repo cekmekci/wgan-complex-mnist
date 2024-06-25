@@ -2,6 +2,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 import torch
 import math
+from utils_celeba import CelebA
 
 class ComplexDataset(Dataset):
     def __init__(self, real_dataset):
@@ -51,8 +52,8 @@ def get_complex_celeba_dataloaders(batch_size=64, image_size=256):
         transforms.ToTensor()
     ])
     # Get train and test data
-    train_data = datasets.CelebA('../data', split='train', transform=all_transforms, download=True)
-    test_data = datasets.CelebA('../data', split='test', transform=all_transforms, download=True)
+    train_data = CelebA('../data', split='train', transform=all_transforms, download=True)
+    test_data = CelebA('../data', split='test', transform=all_transforms, download=True)
     train_data = ComplexDataset(train_data)
     test_data = ComplexDataset(test_data)
     # Create dataloaders
