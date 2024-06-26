@@ -49,7 +49,7 @@ def ptycho_adjoint_op(input, scan, probe, object_size):
     probe = probe[0,:,:] + 1j * probe[1,:,:]
     probe = np.expand_dims(probe, (0,1,2)) # expand probe dims to make it compatible with tike (1,1,1,H2,W2)
     with tike.operators.Ptycho(probe_shape=probe.shape[-1], detector_shape=int(probe.shape[-1]), nz=input.shape[-2], n=input.shape[-1]) as operator:
-        farplane = operator.asarray(np.expand_dims(input, (1,2)), dtype=tike.precision.floating)
+        farplane = operator.asarray(np.expand_dims(input, (1,2)), dtype=tike.precision.cfloating) #cfloating??
         scan = operator.asarray(scan, dtype=tike.precision.floating)
         probe = operator.asarray(probe, dtype=tike.precision.cfloating)
         psi = operator.asarray(np.zeros(object_size), dtype=tike.precision.cfloating)
@@ -64,8 +64,8 @@ def ptycho_adjoint_op(input, scan, probe, object_size):
 
 def cartesian_scan_pattern(object_size, probe_shape, step_size = 25, sigma = 1):
     scan = []
-    for y in range(0, object_size[0] - probe_shape[2], step_size):
-        for x in range(0, object_size[1] - probe_shape[3], step_size):
+    for y in range(0, object_size[0] - probe_shape[2] + 1, step_size):
+        for x in range(0, object_size[1] - probe_shape[3] + 1, step_size):
             y_perturbation = sigma * np.random.randn()
             x_perturbation = sigma * np.random.randn()
             y_new = 1 + y + y_perturbation
@@ -140,9 +140,9 @@ def rPIE(measurement, object_size, scan, probe):
 if __name__ == '__main__':
 
     object_size = (512, 512)
-    probe_size = (128, 128)
+    probe_size = (1, 2, 128, 128)
 
-    probe = torch.randn(1, 2, *probe_size)
+    probe = torch.randn(*probe_size)
     scan = cartesian_scan_pattern(object_size, probe_size, step_size = 32, sigma = 1)
 
     x = torch.randn(1, 2, *object_size)
@@ -156,5 +156,5 @@ if __name__ == '__main__':
     x = torch.complex(x[0,0,:,:], x[0,1,:,:])
     x_tilde = torch.complex(x_tilde[0,0,:,:], x_tilde[0,1,:,:])
 
-    print(np.sum(y_1 * y_tilde))
-    print(np.sum(x * x_tilde))
+    print(torch.sum(y_1 * y_tilde))
+    print(torch.sum(x * x_tilde))
