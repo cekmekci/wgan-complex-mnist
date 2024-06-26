@@ -156,5 +156,5 @@ if __name__ == '__main__':
     x = torch.complex(x[0,0,:,:], x[0,1,:,:])
     x_tilde = torch.complex(x_tilde[0,0,:,:], x_tilde[0,1,:,:])
 
-    print(torch.sum(y_1 * y_tilde))
-    print(torch.sum(x * x_tilde))
+    print(torch.sum(torch.conj(y_1) * y_tilde))
+    print(torch.sum(torch.conj(x) * x_tilde))
