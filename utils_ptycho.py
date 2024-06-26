@@ -134,3 +134,27 @@ def rPIE(measurement, object_size, scan, probe):
     result = np.stack((np.real(result), np.imag(result)), 1)
     result = torch.from_numpy(result).float().to(device)
     return result
+
+
+# Perform the adjoint test here.
+if __name__ == '__main__':
+
+    object_size = (512, 512)
+    probe_size = (128, 128)
+
+    probe = torch.randn(1, 2, *probe_size)
+    scan = cartesian_scan_pattern(object_size, probe_size, step_size = 32, sigma = 1)
+
+    x = torch.randn(1, 2, *object_size)
+    y_tilde = ptycho_forward_op(x, scan, probe)
+    y_1 = torch.randn_like(y_tilde)
+    x_tilde = ptycho_adjoint_op(y_1, scan, probe, object_size)
+
+    # Convert everything back to complex tensors
+    y_tilde = torch.complex(y_tilde[0,:,0,:,:], y_tilde[0,:,1,:,:])
+    y_1 = torch.complex(y_1[0,:,0,:,:], y_1[0,:,1,:,:])
+    x = torch.complex(x[0,0,:,:], x[0,1,:,:])
+    x_tilde = torch.complex(x_tilde[0,0,:,:], x_tilde[0,1,:,:])
+
+    print(np.sum(y_1 * y_tilde))
+    print(np.sum(x * x_tilde))
