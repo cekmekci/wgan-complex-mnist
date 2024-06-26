@@ -64,8 +64,8 @@ def ptycho_adjoint_op(input, scan, probe, object_size):
 
 def cartesian_scan_pattern(object_size, probe_shape, step_size = 25, sigma = 1):
     scan = []
-    for y in range(0, object_size[0] - probe_shape[2] + 1, step_size):
-        for x in range(0, object_size[1] - probe_shape[3] + 1, step_size):
+    for y in range(0, object_size[0] - probe_shape[2] - 1, step_size):
+        for x in range(0, object_size[1] - probe_shape[3] - 1, step_size):
             y_perturbation = sigma * np.random.randn()
             x_perturbation = sigma * np.random.randn()
             y_new = 1 + y + y_perturbation
@@ -91,7 +91,6 @@ def l2_error(true_object, reconstructed_object):
     l2_error = np.real(np.sqrt(term1 + term2 + term3))
 
     return l2_error
-
 
 def rPIE(measurement, object_size, scan, probe):
     # object_size is a tuple, e.g., (H1,W1)
