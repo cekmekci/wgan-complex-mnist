@@ -7,7 +7,7 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 import imageio
 from sampler import MALA_Poisson_Sampler, optimize_latent_variable
 import random
-from utils_ptycho import ptycho_forward_op, ptycho_adjoint_op, cartesian_scan_pattern, rPIE
+from utils_ptycho import ptycho_forward_op, ptycho_adjoint_op, cartesian_scan_pattern, rPIE, create_disk_probe
 import bz2
 from scipy.ndimage import zoom
 
@@ -23,29 +23,22 @@ torch.backends.cudnn.benchmark = False
 
 # Obtain the probe
 print('Loading the probe...')
-probe_amplitude = 1000
-probe_shape = (8, 8)
-with bz2.open('./probes/siemens-star-small.npz.bz2') as f:
-    archive = np.load(f)
-    probe = archive['probe'][0]
-    # reshape the probe
-    probe = np.squeeze(probe, (0,1,2))
-    probe = zoom(probe, (probe_shape[0]/probe.shape[0], probe_shape[1]/probe.shape[1]), order=3)
-    # adjust the amplitude
-    probe = probe_amplitude * probe
-    # adjust the shape so that it is (1,2,H2,W2)
-    probe = np.expand_dims(probe, 0)
-    probe = np.stack((np.real(probe), np.imag(probe)), 1)
-    probe = torch.from_numpy(probe).float()
+probe_amplitude = 200
+probe_shape = (64, 64)
+probe = create_disk_probe(size = probe_shape, width=16.0, magnitude = probe_amplitude)
+probe = np.expand_dims(probe, 0)
+probe = np.stack((np.real(probe), np.imag(probe)), 1)
+probe = torch.from_numpy(probe).float()
+
+# Obtain the test image
+print('Generating the test image...')
+object_size = (256, 256)
+_, test_dataloader = get_complex_mnist_dataloaders(batch_size=1, image_size=object_size[0])
+gt = next(iter(test_dataloader))[0][:1,:,:,:]
 
 # Obtain the scan
 print('Creating the scan pattern...')
-object_size = (64, 64)
-scan = cartesian_scan_pattern(object_size, probe.shape, step_size = 2, sigma = 0.1)
-
-# Obtain a test image
-_, test_dataloader = get_complex_mnist_dataloaders(batch_size=64)
-gt = next(iter(test_dataloader))[0][:1,:,:,:]
+scan = cartesian_scan_pattern(object_size, probe.shape, step_size = 8, sigma = 0.25)
 
 # Obtain the forward operator and its adjoint
 A = lambda x: ptycho_forward_op(x, scan, probe)
@@ -71,7 +64,6 @@ generator.eval()
 # Initialize the latent variable
 rpie_rec = rPIE(intensity, object_size, scan, probe)
 z_init = optimize_latent_variable(generator, rpie_rec, z_dim=latent_dim, lr=1e-4, num_steps=1000, verbose=False)
-
 
 # Create the MALA sampler
 mala_sampler = MALA_Poisson_Sampler(A, AH, generator, intensity, z_init,

@@ -134,6 +134,18 @@ def rPIE(measurement, object_size, scan, probe):
     result = torch.from_numpy(result).float().to(device)
     return result
 
+def create_disk_probe(size=(128, 128), width=16.0, magnitude=1000.0):
+    # Construct a grid
+    x = np.linspace(-size[1]//2, size[1]//2, size[1])
+    y = np.linspace(-size[0]//2, size[0]//2, size[0])
+    xx, yy = np.meshgrid(x, y)
+    # Create a circular disk
+    r_squared = xx**2 + yy**2
+    flat_top_region = r_squared <= (width/2)**2
+    # Generate the synthetic probe
+    complex_probe = magnitude * flat_top_region * np.exp(1j * np.pi / 2 * flat_top_region)
+    return complex_probe
+
 
 # Perform the adjoint test here.
 if __name__ == '__main__':
