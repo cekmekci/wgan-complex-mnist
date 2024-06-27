@@ -23,22 +23,22 @@ torch.backends.cudnn.benchmark = False
 
 # Obtain the probe
 print('Loading the probe...')
-probe_amplitude = 200
-probe_shape = (64, 64)
-probe = create_disk_probe(size = probe_shape, width=16.0, magnitude = probe_amplitude)
+probe_amplitude = 100
+probe_shape = (16, 16)
+probe = create_disk_probe(size = probe_shape, width=8.0, magnitude = probe_amplitude)
 probe = np.expand_dims(probe, 0)
 probe = np.stack((np.real(probe), np.imag(probe)), 1)
 probe = torch.from_numpy(probe).float()
 
 # Obtain the test image
 print('Generating the test image...')
-object_size = (256, 256)
+object_size = (64, 64)
 _, test_dataloader = get_complex_mnist_dataloaders(batch_size=1, image_size=object_size[0])
 gt = next(iter(test_dataloader))[0][:1,:,:,:]
 
 # Obtain the scan
 print('Creating the scan pattern...')
-scan = cartesian_scan_pattern(object_size, probe.shape, step_size = 8, sigma = 0.25)
+scan = cartesian_scan_pattern(object_size, probe.shape, step_size = 2, sigma = 0.1)
 
 # Obtain the forward operator and its adjoint
 A = lambda x: ptycho_forward_op(x, scan, probe)
@@ -66,7 +66,7 @@ rpie_rec = rPIE(intensity, object_size, scan, probe)
 z_init = optimize_latent_variable(generator, rpie_rec, z_dim=latent_dim, lr=1e-4, num_steps=1000, verbose=False)
 
 # Create the MALA sampler
-mala_sampler = MALA_Poisson_Sampler(A, AH, generator, intensity, z_init,
+mala_sampler = MALA_Amplitude_Gaussian_Sampler(A, AH, generator, intensity, z_init,
                 num_iter=1000, step_size=1e-5, burn_in=100, use_cuda=torch.cuda.is_available())
 
 # Generate samples
