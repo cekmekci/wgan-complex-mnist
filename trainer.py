@@ -121,6 +121,8 @@ class Trainer():
                 img_grid = img_grid.astype(np.uint8)
                 # Add image grid to training progress
                 training_progress_images.append(img_grid)
+                imageio.imwrite('./training_{}_epoch.png'.format(epoch),
+                            img_grid)
         if save_training_gif:
             imageio.mimsave('./training_{}_epochs.gif'.format(epochs),
                             training_progress_images)
