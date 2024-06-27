@@ -16,7 +16,7 @@ class ComplexDataset(Dataset):
 
     def __getitem__(self, idx):
         # obtain the magnitude and phase parts
-        magnitude = self.real_dataset[2 * idx][0]
+        magnitude = (self.real_dataset[2 * idx][0] + 0.1) / 1.1 # make sure that magnitude does not have zeros
         phase = self.real_dataset[2 * idx + 1][0]
         # construct the complex tensor
         complex = torch.polar(magnitude, phase)
