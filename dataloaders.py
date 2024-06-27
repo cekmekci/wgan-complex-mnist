@@ -27,8 +27,8 @@ class ComplexDataset(Dataset):
         return image, []
 
 
-def get_complex_mnist_dataloaders(batch_size=64, image_size=256):
-    """MNIST dataloader with (256, 256) sized images."""
+def get_complex_mnist_dataloaders(batch_size=64, image_size=64):
+    """MNIST dataloader with resized images."""
     all_transforms = transforms.Compose([
         transforms.Resize(image_size),
         transforms.ToTensor()
@@ -45,7 +45,7 @@ def get_complex_mnist_dataloaders(batch_size=64, image_size=256):
 
 
 def get_complex_celeba_dataloaders(batch_size=64, image_size=256):
-    """CelebA dataloader with (256, 256) sized images."""
+    """CelebA dataloader with resized images."""
     all_transforms = transforms.Compose([
         transforms.Grayscale(),
         transforms.Resize((image_size,image_size)),
