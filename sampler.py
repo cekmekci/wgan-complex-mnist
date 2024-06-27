@@ -81,6 +81,85 @@ class MALA_Poisson_Sampler():
         return x_samples
 
 
+class MALA_Amplitude_Gaussian_Sampler():
+
+    def __init__(self, A, AT, generator, measurement, z_init,
+                    num_iter=10000, step_size=1e-5, burn_in=500, use_cuda=False):
+        self.A = A
+        self.AT = AT
+        self.generator = generator
+        self.measurement = measurement**0.5 # Note the square root!
+        self.z_init = z_init
+        self.num_iter = num_iter
+        self.step_size = step_size
+        self.burn_in = burn_in
+        self.use_cuda = use_cuda
+        self.eps = 3 / 8 # Offset factor in Anscombe transform
+        if self.use_cuda:
+            self.generator = self.generator.cuda()
+            self.z_init = self.z_init.cuda()
+            self.measurement = self.measurement.cuda()
+
+    def log_p_z_given_y(self, z):
+        # ignoring logp(y)
+        AGz = self.A(self.generator(z))
+        AGz_abs = torch.sqrt(torch.sum(AGz**2, 2, keepdim=True) + self.eps)
+        # what will be the std here after variance stabilzing transform? Add that
+        # constant to the denominator of -1/2
+        log_likelihood = -1 / 2 * torch.sum((self.measurement - AGz_abs)**2)
+        log_prior = -1 / 2 * torch.sum(z**2)
+        return log_likelihood + log_prior
+
+    def grad_log_p_z_given_y(self, z):
+        # gradient of log_p_y_given_z
+        AGz = self.A(self.generator(z)) # (1,S,2,H2,W2)
+        vec = self.AT(AGz * (1 - self.measurement / (torch.sqrt(torch.sum(AGz**2,2,keepdim=True) + self.eps)))) # (1,2,64,64)
+        _, vjp = torch.autograd.functional.vjp(self.generator, z, v=vec, create_graph=False, strict=True) # (1, latent_dim)
+        grad = vjp
+        # add the gradient of log_p_z, which is -z
+        grad = grad - z
+        return grad
+
+    def log_q_zbar_given_ztilde(self, z_bar, z_tilde):
+        grad = self.grad_log_p_z_given_y(z_tilde)
+        return -0.25 / self.step_size * torch.sum((z_bar - z_tilde - self.step_size * grad)**2)
+
+    def sample(self):
+        z = self.z_init
+        z_samples = []
+        for k in range(self.num_iter):
+            # Compute the gradient of log p(z|y)
+            grad = self.grad_log_p_z_given_y(z)
+            # Determine the candidate
+            z_new = z + self.step_size * grad + (2 * self.step_size)**0.5 * torch.randn_like(z)
+            # Determine the transition probability
+            term_1 = self.log_p_z_given_y(z_new)
+            term_2 = self.log_q_zbar_given_ztilde(z, z_new)
+            term_3 = self.log_p_z_given_y(z)
+            term_4 = self.log_q_zbar_given_ztilde(z_new, z)
+            log_prob = term_1 + term_2 - term_3 - term_4
+            prob = torch.exp(log_prob)
+            prob = torch.clamp(prob, min=0.0, max=1.0)
+            print(prob)
+            # Transition
+            if np.random.uniform() < prob.item():
+                z = z_new
+                # If we pass the burn-in period, collect the sample.
+                if k > self.burn_in:
+                    z_samples.append(z.detach().cpu())
+        return z_samples
+
+    def generate_samples(self):
+        z_samples = self.sample()
+        x_samples = []
+        for z_sample in z_samples:
+            if self.use_cuda:
+                z_sample = z_sample.cuda()
+            x_sample = self.generator(z_sample).detach().cpu().numpy()[0,:,:,:]
+            x_samples.append(x_sample)
+        return x_samples
+
+
 def optimize_latent_variable(G, x, z_dim, lr=1e-4, num_steps=1000, verbose=False):
     """
     Finds the latent variable z that best approximates the given image x.
