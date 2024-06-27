@@ -108,24 +108,37 @@ class Trainer():
             fixed_latents = self.G.sample_latent(64)
             if self.use_cuda:
                 fixed_latents = fixed_latents.cuda()
-            training_progress_images = []
+
+            training_progress_images_magnitude = []
+            training_progress_images_phase = []
         for epoch in range(epochs):
             print("\nEpoch {}".format(epoch + 1))
             self._train_epoch(data_loader)
             if save_training_gif:
                 # Generate batch of images and convert to grid
-                img_grid = make_grid(self.G(fixed_latents).cpu().data)
+                images = self.G(fixed_latents).detach().cpu().data
+                magnitudes = torch.sqrt(images[:,0:1,:,:]**2 + images[:,1:2,:,:]**2)
+                phases = torch.atan2(images[:,1:2,:,:], images[:,0:1,:,:] + 1e-5)
+                img_grid_mag = make_grid(magnitudes)
+                img_grid_phase = make_grid(phases)
                 # Convert to numpy and transpose axes to fit imageio convention
                 # i.e. (width, height, channels)
-                img_grid = np.transpose(img_grid.numpy(), (1, 2, 0)) * 255
-                img_grid = img_grid.astype(np.uint8)
+                img_grid_mag = np.transpose(img_grid_mag.numpy(), (1, 2, 0)) * 255
+                img_grid_mag = img_grid_mag.astype(np.uint8)
+                img_grid_phase = np.transpose(img_grid_phase.numpy(), (1, 2, 0)) * 255
+                img_grid_phase = img_grid_phase.astype(np.uint8)
                 # Add image grid to training progress
-                training_progress_images.append(img_grid)
-                imageio.imwrite('./training_{}_epoch.png'.format(epoch),
-                            img_grid)
+                training_progress_images_magnitude.append(img_grid_mag)
+                training_progress_images_phase.append(img_grid_phase)
+                imageio.imwrite('./training_{}_epoch_magnitude.png'.format(epoch),
+                            img_grid_mag)
+                imageio.imwrite('./training_{}_epoch_phase.png'.format(epoch),
+                            img_grid_phase)
         if save_training_gif:
-            imageio.mimsave('./training_{}_epochs.gif'.format(epochs),
-                            training_progress_images)
+            imageio.mimsave('./training_{}_epochs_magnitude.gif'.format(epochs),
+                            training_progress_images_magnitude)
+            imageio.mimsave('./training_{}_epochs_phase.gif'.format(epochs),
+                            training_progress_images_phase)
 
     def sample_generator(self, num_samples):
         latent_samples = self.G.sample_latent(num_samples)
