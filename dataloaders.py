@@ -7,6 +7,7 @@ from utils_celeba import CelebA
 class ComplexDataset(Dataset):
     def __init__(self, real_dataset):
         self.real_dataset = real_dataset
+        self.eps = 0.1
         # Ensure the number of images is even
         if len(self.real_dataset) % 2 != 0:
             print("Size of the dataset is not even!")
@@ -16,7 +17,7 @@ class ComplexDataset(Dataset):
 
     def __getitem__(self, idx):
         # obtain the magnitude and phase parts
-        magnitude = (self.real_dataset[2 * idx][0] + 0.1) / 1.1 # make sure that magnitude does not have zeros
+        magnitude = (self.real_dataset[2 * idx][0] + self.eps) / (1 + self.eps) # make sure that magnitude does not have zeros
         phase = self.real_dataset[2 * idx + 1][0]
         # construct the complex tensor
         complex = torch.polar(magnitude, phase)
