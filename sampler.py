@@ -5,12 +5,11 @@ import torch.optim as optim
 
 
 class MALA_Poisson_Sampler():
-
     def __init__(self, A, AT, generator, measurement, z_init,
                     num_iter=10000, step_size=1e-5, burn_in=500, use_cuda=False):
         self.A = A
         self.AT = AT
-        self.generator = generator
+        self.generator = WrapperModel(generator)
         self.measurement = measurement
         self.z_init = z_init
         self.num_iter = num_iter
@@ -82,12 +81,11 @@ class MALA_Poisson_Sampler():
 
 
 class MALA_Amplitude_Gaussian_Sampler():
-
     def __init__(self, A, AT, generator, measurement, z_init,
                     num_iter=10000, step_size=1e-5, burn_in=500, use_cuda=False):
         self.A = A
         self.AT = AT
-        self.generator = generator
+        self.generator = WrapperModel(generator)
         self.measurement = measurement**0.5 # Note the square root!
         self.z_init = z_init
         self.num_iter = num_iter
@@ -196,6 +194,31 @@ def optimize_latent_variable(G, x, z_dim, lr=1e-4, num_steps=1000, verbose=False
         if verbose and (step % 100 == 0):
             print(f'Step {step}/{num_steps}, Loss: {loss.item()}')
     return z.detach()
+
+
+class WrapperModel(nn.Module):
+    def __init__(self, original_model):
+        super(WrapperModel, self).__init__()
+        self.original_model = original_model
+
+    def phase_magnitude_to_real_imag(self, input):
+        # Array is (1,2,H,W) where 2 represents the magnitude and the hase
+        magnitude = input[:, 0, :, :]
+        phase = input[:, 1, :, :]
+        # Compute the real part
+        real_part = magnitude * torch.cos(phase)
+        # Compute the imaginary part
+        imaginary_part = magnitude * torch.sin(phase)
+        # Combine the real and imaginary parts into the desired shape
+        real_imag_array = torch.stack((real_part, imaginary_part), dim=1)
+        return real_imag_array
+
+    def forward(self, x):
+        # Get the output from the original model
+        phase_magnitude_output = self.original_model(x)
+        # Convert phase and magnitude to real and imaginary parts
+        real_imag_output = self.phase_magnitude_to_real_imag(phase_magnitude_output)
+        return real_imag_output
 
 
 # Numerically test if the gradient calculation is correct
