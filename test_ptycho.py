@@ -35,6 +35,9 @@ print('Generating the test image...')
 object_size = (64, 64)
 _, test_dataloader = get_complex_mnist_dataloaders(batch_size=1, image_size=object_size[0])
 gt = next(iter(test_dataloader))[0][:1,:,:,:]
+gt_real = gt[:,0:1,:,:] * torch.cos(gt[:,1:2,:,:])
+gt_imag = gt[:,0:1,:,:] * torch.sin(gt[:,1:2,:,:])
+gt = torch.cat((gt_real, gt_imag), 1)
 
 # Obtain the scan
 print('Creating the scan pattern...')
@@ -66,7 +69,7 @@ rpie_rec = rPIE(intensity, object_size, scan, probe)
 z_init = optimize_latent_variable(generator, rpie_rec, z_dim=latent_dim, lr=1e-4, num_steps=1000, verbose=False)
 
 # Create the MALA sampler
-mala_sampler = MALA_Amplitude_Gaussian_Sampler(A, AH, generator, intensity, z_init,
+mala_sampler = MALA_Poisson_Sampler(A, AH, generator, intensity, z_init,
                 num_iter=1000, step_size=1e-5, burn_in=100, use_cuda=torch.cuda.is_available())
 
 # Generate samples

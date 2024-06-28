@@ -2,7 +2,7 @@ import torch
 import random
 import numpy as np
 import torch.optim as optim
-from dataloaders import get_complex_mnist_dataloaders, get_complex_celeba_dataloaders
+from dataloaders import get_complex_mnist_dataloaders
 from models import Generator, Discriminator
 from trainer import Trainer
 
@@ -15,7 +15,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 img_size = (2, 64, 64)
-data_loader, _ = get_complex_celeba_dataloaders(batch_size=32, image_size=img_size[1])
+data_loader, _ = get_complex_mnist_dataloaders(batch_size=32, image_size=img_size[1])
 
 # Architectures of the generator and discriminator follow Table 2 in Unser's paper.
 generator = Generator(img_size=img_size, latent_dim=100, dim=128)

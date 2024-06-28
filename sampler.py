@@ -163,7 +163,7 @@ def optimize_latent_variable(G, x, z_dim, lr=1e-4, num_steps=1000, verbose=False
     Finds the latent variable z that best approximates the given image x.
 
     Args:
-        G (nn.Module): Generative model.
+        G (nn.Module): Generative model outputting magnitude-phase.
         x (torch.Tensor): Target image tensor.
         z_dim (int): Dimension of the latent space.
         lr (float): Learning rate for the optimizer.
@@ -172,6 +172,8 @@ def optimize_latent_variable(G, x, z_dim, lr=1e-4, num_steps=1000, verbose=False
     Returns:
         torch.Tensor: Optimized latent variable.
     """
+    # Make sure that G outputs in real-imag format
+    G = WrapperModel(G)
     # Ensure x is on the same device as G
     device = next(G.parameters()).device
     x = x.to(device)
