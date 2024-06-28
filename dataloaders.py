@@ -19,12 +19,15 @@ class ComplexDataset(Dataset):
         # obtain the magnitude and phase parts
         magnitude = (self.real_dataset[2 * idx][0] + self.eps) / (1 + self.eps) # make sure that magnitude does not have zeros
         phase = self.real_dataset[2 * idx + 1][0]
+        """
         # construct the complex tensor
         complex = torch.polar(magnitude, phase)
         # real and imaginary parts
         real = torch.real(complex)
         imag = torch.imag(complex)
         image = torch.cat((real, imag), dim=0)  # Concatenate along channel dimension
+        """
+        image = torch.cat((magnitude, phase), dim=0)  # Concatenate along channel dimension
         return image, []
 
 

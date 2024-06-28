@@ -108,7 +108,6 @@ class Trainer():
             fixed_latents = self.G.sample_latent(64)
             if self.use_cuda:
                 fixed_latents = fixed_latents.cuda()
-
             training_progress_images_magnitude = []
             training_progress_images_phase = []
         for epoch in range(epochs):
@@ -117,8 +116,10 @@ class Trainer():
             if save_training_gif:
                 # Generate batch of images and convert to grid
                 images = self.G(fixed_latents).detach().cpu().data
-                magnitudes = torch.sqrt(images[:,0:1,:,:]**2 + images[:,1:2,:,:]**2)
-                phases = torch.atan2(images[:,1:2,:,:], images[:,0:1,:,:] + 1e-5)
+                # magnitudes = torch.sqrt(images[:,0:1,:,:]**2 + images[:,1:2,:,:]**2)
+                # phases = torch.atan2(images[:,1:2,:,:], images[:,0:1,:,:] + 1e-5)
+                magnitudes = images[:,0:1,:,:]
+                phases = images[:,1:2,:,:]
                 img_grid_mag = make_grid(magnitudes)
                 img_grid_phase = make_grid(phases)
                 # Convert to numpy and transpose axes to fit imageio convention
